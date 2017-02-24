@@ -189,7 +189,7 @@ module DeviseTokenAuth::Concerns::User
   end
 
 
-  def build_auth_header(token, client_id='default', provider=nil)
+  def build_auth_header(token, client_id='default', provider='email')
     client_id ||= 'default'
 
     # client may use expiry to prevent validation request if expired
@@ -208,10 +208,17 @@ module DeviseTokenAuth::Concerns::User
       query = self.send(DeviseTokenAuth.multiple_providers_association)
       query.where(provider: provider) if provider
       association = query.first
-      headers = {
-        DeviseTokenAuth.headers_names[:"uid"]          => association&.uid,
-        DeviseTokenAuth.headers_names[:"provider"]     => association&.provider
-      }
+      if provider == 'email'
+        headers = {
+          DeviseTokenAuth.headers_names[:"uid"]          => self.email,
+          DeviseTokenAuth.headers_names[:"provider"]     => provider
+        }
+      else
+        headers = {
+          DeviseTokenAuth.headers_names[:"uid"]          => association&.uid,
+          DeviseTokenAuth.headers_names[:"provider"]     => association&.provider
+        }
+      end
     else
       headers = {
         DeviseTokenAuth.headers_names[:"uid"]          => self.uid,
