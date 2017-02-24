@@ -20,10 +20,14 @@ module DeviseTokenAuth
           q_value.downcase!
         end
 
-        q = "#{field.to_s} = ? AND provider='email'"
+        if DeviseTokenAuth.multiple_providers
+          q = "#{field.to_s} = ?"
+        else
+          q = "#{field.to_s} = ? AND provider='email'"
 
-        if ActiveRecord::Base.connection.adapter_name.downcase.starts_with? 'mysql'
-          q = "BINARY " + q
+          if ActiveRecord::Base.connection.adapter_name.downcase.starts_with? 'mysql'
+            q = "BINARY " + q
+          end
         end
 
         @resource = resource_class.where(q, q_value).first

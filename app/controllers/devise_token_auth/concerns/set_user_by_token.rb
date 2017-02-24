@@ -24,12 +24,14 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     return unless rc
 
     #gets the headers names, which was set in the initialize file
+    provider_name = DeviseTokenAuth.headers_names[:'provider']
     uid_name = DeviseTokenAuth.headers_names[:'uid']
     access_token_name = DeviseTokenAuth.headers_names[:'access-token']
     client_name = DeviseTokenAuth.headers_names[:'client']
 
     # parse header for values necessary for authentication
     uid        = request.headers[uid_name] || params[uid_name]
+    @provider  ||= request.headers[provider_name] || params[provider_name]
     @token     ||= request.headers[access_token_name] || params[access_token_name]
     @client_id ||= request.headers[client_name] || params[client_name]
 
@@ -58,7 +60,15 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     return false unless @token
 
     # mitigate timing attacks by finding by uid instead of auth token
-    user = uid && rc.find_by_uid(uid)
+    if DeviseTokenAuth.multiple_providers
+      user = uid && rc.includes(DeviseTokenAuth.multiple_providers_association)
+        .where(DeviseTokenAuth.multiple_providers_association => {
+          provider: @provider,
+          uid: uid
+      }).first
+    else
+      user = uid && rc.find_by_uid(uid)
+    end
 
     if user && user.valid_token?(@token, @client_id)
       # sign_in with bypass: true will be deprecated in the next version of Devise
@@ -88,7 +98,7 @@ module DeviseTokenAuth::Concerns::SetUserByToken
       # cleared by sign out in the meantime
       return if @resource.reload.tokens[@client_id].nil?
 
-      auth_header = @resource.build_auth_header(@token, @client_id)
+      auth_header = @resource.build_auth_header(@token, @client_id, @provider)
 
       # update the response header
       response.headers.merge!(auth_header)
@@ -115,7 +125,7 @@ module DeviseTokenAuth::Concerns::SetUserByToken
 
         # update Authorization response header with new token
         else
-          auth_header = @resource.create_new_auth_token(@client_id)
+          auth_header = @resource.create_new_auth_token(@client_id, @provider)
 
           # update the response header
           response.headers.merge!(auth_header)

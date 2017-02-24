@@ -170,7 +170,8 @@ module DeviseTokenAuth
       @auth_params = {
         auth_token:     @token,
         client_id: @client_id,
-        uid:       @resource.uid,
+        uid:       @uid,
+        provider:  @provider,
         expiry:    @expiry,
         config:    @config
       }
@@ -231,15 +232,36 @@ module DeviseTokenAuth
     end
 
     def get_resource_from_auth_hash
-      # find or create user by provider and provider uid
-      @resource = resource_class.where({
-        uid:      auth_hash['uid'],
-        provider: auth_hash['provider']
-      }).first_or_initialize
+      @uid = auth_hash['uid']
+      @provider = auth_hash['provider']
+      @email ||= auth_hash['info']['email']
 
-      if @resource.new_record?
-        @oauth_registration = true
-        set_random_password
+      if DeviseTokenAuth.multiple_providers
+        @resource = resource_class.where(
+          email: @email,
+        ).first_or_initialize
+
+        if @resource.new_record?
+          @resource.send(DeviseTokenAuth.multiple_providers_association)
+            .build(provider: @provider, uid: @uid)
+          @oauth_registration = true
+          set_random_password
+        else
+          association = @resource.send(DeviseTokenAuth.multiple_providers_association)
+            .where(provider: @provider, uid: @uid).first_or_create
+          @oauth_registration = true if association.new_record?
+        end
+      else
+        # find or create user by provider and provider uid
+        @resource = resource_class.where({
+          uid:      auth_hash['uid'],
+          provider: auth_hash['provider']
+        }).first_or_initialize
+
+        if @resource.new_record?
+          @oauth_registration = true
+          set_random_password
+        end
       end
 
       # sync user info with provider, update/generate auth token

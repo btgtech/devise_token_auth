@@ -27,7 +27,7 @@ module DeviseTokenAuth::Concerns::User
       serialize :tokens, JSON
     end
 
-    if DeviseTokenAuth.default_callbacks
+    if DeviseTokenAuth.default_callbacks && !DeviseTokenAuth.multiple_providers
       include DeviseTokenAuth::Concerns::UserOmniauthCallbacks
     end
 
@@ -159,7 +159,7 @@ module DeviseTokenAuth::Concerns::User
 
 
   # update user's auth token (should happen on each request)
-  def create_new_auth_token(client_id=nil)
+  def create_new_auth_token(client_id=nil, provider=nil)
     client_id  ||= SecureRandom.urlsafe_base64(nil, false)
     last_token ||= nil
     token        = SecureRandom.urlsafe_base64(nil, false)
@@ -177,11 +177,11 @@ module DeviseTokenAuth::Concerns::User
       updated_at: Time.now
     }
 
-    return build_auth_header(token, client_id)
+    return build_auth_header(token, client_id, provider)
   end
 
 
-  def build_auth_header(token, client_id='default')
+  def build_auth_header(token, client_id='default', provider=nil)
     client_id ||= 'default'
 
     # client may use expiry to prevent validation request if expired
@@ -196,18 +196,32 @@ module DeviseTokenAuth::Concerns::User
 
     self.save!
 
+    if DeviseTokenAuth.multiple_providers
+      query = self.send(DeviseTokenAuth.multiple_providers_association)
+      query.where(provider: provider) if provider
+      association = query.first
+      headers = {
+        DeviseTokenAuth.headers_names[:"uid"]          => association&.uid,
+        DeviseTokenAuth.headers_names[:"provider"]     => association&.provider
+      }
+    else
+      headers = {
+        DeviseTokenAuth.headers_names[:"uid"]          => self.uid,
+        DeviseTokenAuth.headers_names[:"provider"]     => self.provider
+      }
+    end
+
     return {
       DeviseTokenAuth.headers_names[:"access-token"] => token,
       DeviseTokenAuth.headers_names[:"token-type"]   => "Bearer",
       DeviseTokenAuth.headers_names[:"client"]       => client_id,
-      DeviseTokenAuth.headers_names[:"expiry"]       => expiry.to_s,
-      DeviseTokenAuth.headers_names[:"uid"]          => self.uid
-    }
+      DeviseTokenAuth.headers_names[:"expiry"]       => expiry.to_s
+    }.merge(headers)
   end
 
 
   def build_auth_url(base_url, args)
-    args[:uid]    = self.uid
+    args[:uid]    = self.uid unless DeviseTokenAuth.multiple_providers
     args[:expiry] = self.tokens[args[:client_id]]['expiry']
 
     DeviseTokenAuth::Url.generate(base_url, args)
