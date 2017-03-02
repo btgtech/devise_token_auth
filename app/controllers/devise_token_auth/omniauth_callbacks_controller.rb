@@ -237,9 +237,11 @@ module DeviseTokenAuth
       @email ||= auth_hash['info']['email']
 
       if DeviseTokenAuth.multiple_providers
-        @resource = resource_class.where(
-          email: @email,
-        ).first_or_initialize
+        @resource = resource_class
+          .includes(DeviseTokenAuth.multiple_providers_association.to_sym)
+          .where(DeviseTokenAuth.multiple_providers_association => {
+            provider: @provider, uid: @uid})
+          .first_or_initialize(email: @email)
 
         if @resource.new_record?
           @resource.send(DeviseTokenAuth.multiple_providers_association)
@@ -273,6 +275,5 @@ module DeviseTokenAuth
 
       @resource
     end
-
   end
 end
