@@ -27,7 +27,7 @@ module DeviseTokenAuth::Concerns::User
       serialize :tokens, JSON
     end
 
-    if DeviseTokenAuth.default_callbacks && !DeviseTokenAuth.multiple_providers
+    if DeviseTokenAuth.default_callbacks
       include DeviseTokenAuth::Concerns::UserOmniauthCallbacks
     end
 
@@ -91,8 +91,19 @@ module DeviseTokenAuth::Concerns::User
   end
 
   module ClassMethods
-    protected
+    def multiple_providers_association(association = nil)
+      if association
+        @multiple_providers_association = association
+      else
+        @multiple_providers_association
+      end
+    end
 
+    def multiple_providers
+      !!@multiple_providers_association
+    end
+
+    protected
 
     def tokens_has_json_column_type?
       database_exists? && table_exists? && self.columns_hash['tokens'] && self.columns_hash['tokens'].type.in?([:json, :jsonb])
@@ -167,7 +178,7 @@ module DeviseTokenAuth::Concerns::User
 
 
   # update user's auth token (should happen on each request)
-  def create_new_auth_token(client_id=nil, provider=nil)
+  def create_new_auth_token(client_id=nil, provider='email')
     client_id  ||= SecureRandom.urlsafe_base64(nil, false)
     last_token ||= nil
     token        = SecureRandom.urlsafe_base64(nil, false)
@@ -204,8 +215,8 @@ module DeviseTokenAuth::Concerns::User
 
     self.save!
 
-    if DeviseTokenAuth.multiple_providers
-      query = self.send(DeviseTokenAuth.multiple_providers_association)
+    if self.class.multiple_providers
+      query = self.send(self.class.multiple_providers_association)
       query.where(provider: provider) if provider
       association = query.first
       if provider == 'email'
@@ -236,7 +247,7 @@ module DeviseTokenAuth::Concerns::User
 
 
   def build_auth_url(base_url, args)
-    args[:uid]    = self.uid unless DeviseTokenAuth.multiple_providers
+    args[:uid]    = self.uid unless self.class.multiple_providers
     args[:expiry] = self.tokens[args[:client_id]]['expiry']
 
     DeviseTokenAuth::Url.generate(base_url, args)

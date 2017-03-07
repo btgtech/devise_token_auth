@@ -20,8 +20,6 @@ module DeviseTokenAuth
                  :check_current_password_before_update,
                  :enable_standard_devise_support,
                  :remove_tokens_after_password_reset,
-                 :multiple_providers,
-                 :multiple_providers_association,
                  :default_callbacks,
                  :headers_names
 
@@ -36,8 +34,6 @@ module DeviseTokenAuth
   self.check_current_password_before_update = false
   self.enable_standard_devise_support       = false
   self.remove_tokens_after_password_reset   = false
-  self.multiple_providers                   = false
-  self.multiple_providers_association       = :authentications
   self.default_callbacks                    = true
   self.headers_names                        = {:'access-token' => 'access-token',
                                                :'client' => 'client',

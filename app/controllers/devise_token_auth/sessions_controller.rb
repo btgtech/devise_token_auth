@@ -20,7 +20,7 @@ module DeviseTokenAuth
           q_value.downcase!
         end
 
-        if DeviseTokenAuth.multiple_providers
+        if resource_class.multiple_providers
           q = "#{field.to_s} = ?"
         else
           q = "#{field.to_s} = ? AND provider='email'"

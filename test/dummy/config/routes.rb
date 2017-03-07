@@ -35,6 +35,7 @@ Rails.application.routes.draw do
   mount_devise_token_auth_for 'UnconfirmableUser', at: 'unconfirmable_user_auth'
 
   mount_devise_token_auth_for 'LockableUser', at: 'lockable_user_auth'
+  mount_devise_token_auth_for 'MultipleProviderUser', at: 'multi_auth'
 
   # test namespacing
   namespace :api do

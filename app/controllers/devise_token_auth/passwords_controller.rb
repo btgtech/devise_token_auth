@@ -34,7 +34,7 @@ module DeviseTokenAuth
         @email = resource_params[:email]
       end
 
-      if DeviseTokenAuth.multiple_providers
+      if resource_class.multiple_providers
         q = 'email = ?'
       else
         q = "uid = ? AND provider='email'"
@@ -58,7 +58,7 @@ module DeviseTokenAuth
           client_config: params[:config_name]
         }
 
-        reset_password_attrs.merge!(provider: 'email') unless DeviseTokenAuth.multiple_providers
+        reset_password_attrs.merge!(provider: 'email') unless resource_class.multiple_providers
 
         @resource.send_reset_password_instructions(reset_password_attrs)
 
@@ -122,7 +122,7 @@ module DeviseTokenAuth
 
       # make sure account doesn't use oauth2 provider
       # support multiple providers
-      unless DeviseTokenAuth.multiple_providers || @resource.provider == 'email'
+      unless resource_class.multiple_providers || @resource.provider == 'email'
         return render_update_error_password_not_required
       end
 

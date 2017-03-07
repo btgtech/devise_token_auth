@@ -237,27 +237,28 @@ module DeviseTokenAuth
       @uid = auth_hash['uid']
       @provider = auth_hash['provider']
       @email ||= auth_hash['info']['email']
+      rc = resource_class
 
-      if DeviseTokenAuth.multiple_providers
-        @resource = resource_class
-          .includes(DeviseTokenAuth.multiple_providers_association.to_sym)
-          .where(DeviseTokenAuth.multiple_providers_association => {
+      if rc.multiple_providers
+        @resource = rc
+          .includes(rc.multiple_providers_association.to_sym)
+          .where(rc.multiple_providers_association => {
             provider: @provider, uid: @uid})
           .first_or_initialize(email: @email)
 
         if @resource.new_record?
-          @resource.send(DeviseTokenAuth.multiple_providers_association)
+          @resource.send(rc.multiple_providers_association)
             .build(provider: @provider, uid: @uid)
           @oauth_registration = true
           set_random_password
         else
-          association = @resource.send(DeviseTokenAuth.multiple_providers_association)
+          association = @resource.send(rc.multiple_providers_association)
             .where(provider: @provider, uid: @uid).first_or_create
           @oauth_registration = true if association.new_record?
         end
       else
         # find or create user by provider and provider uid
-        @resource = resource_class.where({
+        @resource = rc.where({
           uid:      auth_hash['uid'],
           provider: auth_hash['provider']
         }).first_or_initialize

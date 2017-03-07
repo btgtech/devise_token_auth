@@ -45,12 +45,4 @@ DeviseTokenAuth.setup do |config|
   # If, however, you wish to integrate with legacy Devise authentication, you can
   # do so by enabling this flag. NOTE: This feature is highly experimental!
   # config.enable_standard_devise_support = false
-
-  # By default we will use just one provider per user.
-  # Change this to true to handle multiple providers
-  # config.multiple_providers = false
-
-  # By default the multiple providers association will be authentications.
-  # Change this if you want multiple providers association name for your resourse
-  # config.multiple_providers_association = :authentications
 end
