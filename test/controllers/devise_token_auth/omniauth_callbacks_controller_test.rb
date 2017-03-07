@@ -66,6 +66,38 @@ class OmniauthTest < ActionDispatch::IntegrationTest
       get_success
     end
 
+    test 'auth params sets the provider' do
+      get_success
+      assert_equal 'facebook', controller.auth_params[:provider]
+    end
+
+    describe 'with multiple providers' do
+      test 'request create a new authentication' do
+        get_success({},'/multi_auth/facebook')
+
+        authentication = @resource.authentications.first
+        assert_equal authentication.uid, '123545'
+        assert_equal authentication.provider, 'facebook'
+      end
+
+      test 'request generates a random password' do
+        get_success({},'/multi_auth/facebook')
+        assert @resource.encrypted_password.present?
+      end
+
+      test 'request should handle consecutive requests' do
+        get_success({},'/multi_auth/facebook')
+        get_success({},'/multi_auth/facebook')
+        get_success({},'/multi_auth/facebook')
+
+        authentication = @resource.authentications.first
+        assert_equal MultipleProviderUser.count, 1
+        assert_equal Authentication.count, 1
+        assert_equal authentication.uid, '123545'
+        assert_equal authentication.provider, 'facebook'
+      end
+    end
+
     describe 'with default user model' do
       before do
         get_success
@@ -232,8 +264,8 @@ class OmniauthTest < ActionDispatch::IntegrationTest
       end
     end
 
-    def get_success(params = {})
-      get_via_redirect '/auth/facebook', {
+    def get_success(params = {}, url = '/auth/facebook')
+      get_via_redirect url, {
         auth_origin_url: @redirect_url,
         omniauth_window_type: 'newWindow'
       }.merge(params)

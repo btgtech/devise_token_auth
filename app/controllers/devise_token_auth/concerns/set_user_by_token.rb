@@ -60,12 +60,12 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     return false unless @token
 
     # mitigate timing attacks by finding by uid instead of auth token
-    if DeviseTokenAuth.multiple_providers
+    if rc.multiple_providers
       if @provider == 'email'
         user = rc.find_by_email(uid)
       else
-        user = uid && rc.includes(DeviseTokenAuth.multiple_providers_association)
-          .where(DeviseTokenAuth.multiple_providers_association => {
+        user = uid && rc.includes(rc.multiple_providers_association)
+          .where(rc.multiple_providers_association => {
             provider: @provider,
             uid: uid
           }).first
