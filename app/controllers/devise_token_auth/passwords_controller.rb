@@ -98,17 +98,12 @@ module DeviseTokenAuth
         @resource.skip_confirmation! if @resource.devise_modules.include?(:confirmable) && !@resource.confirmed_at
 
         # allow user to change password once without current_password
-        @resource.allow_password_change = true;
+        @resource.allow_password_change = true
 
         @resource.save!
         yield @resource if block_given?
 
-        redirect_to(@resource.build_auth_url(params[:redirect_url], {
-          token:          token,
-          client_id:      client_id,
-          reset_password: true,
-          config:         params[:config]
-        }))
+        render_edit_success(token, client_id, expiry)
       else
         render_edit_error
       end
@@ -187,8 +182,22 @@ module DeviseTokenAuth
       }, status: @error_status
     end
 
+    def render_edit_success(token, client_id, expiry)
+      render json: {
+        success: true,
+        data: resource_data,
+        reset_password: true,
+        token: token,
+        client_id: client_id,
+        expiry: expiry
+      }
+    end
+
     def render_edit_error
-      raise ActionController::RoutingError.new('Not Found')
+      render json: {
+        success: false,
+        errors: ['Not Found']
+      }, status: 404
     end
 
     def render_update_error_unauthorized
