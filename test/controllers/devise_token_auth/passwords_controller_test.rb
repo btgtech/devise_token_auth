@@ -123,13 +123,20 @@ class DeviseTokenAuth::PasswordsControllerTest < ActionController::TestCase
           end
 
           describe 'password reset link failure' do
-            test 'response should return 404' do
-              assert_raises(ActionController::RoutingError) {
-                xhr :get, :edit, {
-                  reset_password_token: "bogus",
-                  redirect_url: @mail_redirect_url
-                }
+            before do
+              xhr :get, :edit, {
+                reset_password_token: "bogus",
+                redirect_url: @mail_redirect_url
               }
+              @data = JSON.parse(response.body)
+            end
+
+            test 'response should return 404' do
+              assert_equal 404, response.status
+            end
+
+            test 'errors should be returned' do
+              assert @data["errors"]
             end
           end
 
@@ -140,32 +147,23 @@ class DeviseTokenAuth::PasswordsControllerTest < ActionController::TestCase
                 redirect_url: @mail_redirect_url
               }
 
+              @data = JSON.parse(response.body)
               @resource.reload
-
-              raw_qs = response.location.split('?')[1]
-              @qs = Rack::Utils.parse_nested_query(raw_qs)
-
-              @client_id      = @qs["client_id"]
-              @expiry         = @qs["expiry"]
-              @reset_password = @qs["reset_password"]
-              @token          = @qs["token"]
-              @uid            = @qs["uid"]
             end
 
-            test 'respones should have success redirect status' do
-              assert_equal 302, response.status
+            test 'response should be successful' do
+              assert_equal 200, response.status
             end
 
             test 'response should contain auth params' do
-              assert @client_id
-              assert @expiry
-              assert @reset_password
-              assert @token
-              assert @uid
+              client_id = @resource.tokens.keys.first
+              assert_equal @data["client_id"], client_id
+              assert_equal @data["expiry"], @resource.tokens[client_id]["expiry"]
+              assert_equal @data["reset_password"], true
             end
 
             test 'response auth params should be valid' do
-              assert @resource.valid_token?(@token, @client_id)
+              assert @resource.valid_token?(@data["token"], @data["client_id"])
             end
           end
 
