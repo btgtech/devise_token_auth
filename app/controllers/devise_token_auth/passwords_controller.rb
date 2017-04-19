@@ -79,33 +79,41 @@ module DeviseTokenAuth
 
     # this is where users arrive after visiting the password reset confirmation link
     def edit
-      @resource = resource_class.reset_password_by_token({
-        reset_password_token: resource_params[:reset_password_token]
-      })
+      reset_password_token = Devise.token_generator.digest(self, :reset_password_token, resource_params[:reset_password_token])
+      @resource = resource_class.find_by_reset_password_token(reset_password_token)
+      # previous validation to check that the token exists and is valid before doing the password reset
+      if @resource && @resource.reset_password_period_valid?
+        # finds or initializes a resource by token with other possible errors
+        @resource = resource_class.reset_password_by_token({
+          reset_password_token: resource_params[:reset_password_token]
+        })
 
-      if @resource and @resource.id
-        client_id  = SecureRandom.urlsafe_base64(nil, false)
-        token      = SecureRandom.urlsafe_base64(nil, false)
-        token_hash = BCrypt::Password.create(token)
-        expiry     = (Time.now + DeviseTokenAuth.token_lifespan).to_i
+        if @resource and @resource.id
+          client_id  = SecureRandom.urlsafe_base64(nil, false)
+          token      = SecureRandom.urlsafe_base64(nil, false)
+          token_hash = BCrypt::Password.create(token)
+          expiry     = (Time.now + DeviseTokenAuth.token_lifespan).to_i
 
-        @resource.tokens[client_id] = {
-          token:  token_hash,
-          expiry: expiry
-        }
+          @resource.tokens[client_id] = {
+            token:  token_hash,
+            expiry: expiry
+          }
 
-        # ensure that user is confirmed
-        @resource.skip_confirmation! if @resource.devise_modules.include?(:confirmable) && !@resource.confirmed_at
+          # ensure that user is confirmed
+          @resource.skip_confirmation! if @resource.devise_modules.include?(:confirmable) && !@resource.confirmed_at
 
-        # allow user to change password once without current_password
-        @resource.allow_password_change = true
+          # allow user to change password once without current_password
+          @resource.allow_password_change = true
 
-        @resource.save!
-        yield @resource if block_given?
+          @resource.save!
+          yield @resource if block_given?
 
-        render_edit_success(token, client_id, expiry)
+          render_edit_success(token, client_id, expiry)
+        else
+          render_edit_error
+        end
       else
-        render_edit_error
+        render_edit_error_invalid
       end
     end
 
@@ -199,6 +207,13 @@ module DeviseTokenAuth
         success: false,
         errors: ['Not Found']
       }, status: 404
+    end
+
+    def render_edit_error_invalid
+      render json: {
+        success: false,
+        errors: ['Reset password token is invalid']
+      }, status: 401
     end
 
     def render_update_error_unauthorized

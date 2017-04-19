@@ -131,8 +131,8 @@ class DeviseTokenAuth::PasswordsControllerTest < ActionController::TestCase
               @data = JSON.parse(response.body)
             end
 
-            test 'response should return 404' do
-              assert_equal 404, response.status
+            test 'response should return 401' do
+              assert_equal 401, response.status
             end
 
             test 'errors should be returned' do

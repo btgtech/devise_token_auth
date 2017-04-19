@@ -88,6 +88,13 @@ module DeviseTokenAuth::Concerns::User
 
       token
     end
+
+    # override devise method to persist reset_password_token, the token will be removed once the password is updated
+    def set_reset_password_token
+      raw, enc = Devise.token_generator.generate(self.class, :reset_password_token)
+      update_columns(reset_password_token: enc, reset_password_sent_at: Time.now.utc)
+      raw
+    end
   end
 
   module ClassMethods
