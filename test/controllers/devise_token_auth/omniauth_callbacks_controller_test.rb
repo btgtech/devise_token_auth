@@ -85,9 +85,9 @@ class OmniauthTest < ActionDispatch::IntegrationTest
         assert_equal authentication.provider, 'facebook'
       end
 
-      test 'request generates a random password' do
+      test "request doesn't generates a random password" do
         get_success({},'/multi_auth/facebook')
-        assert @resource.encrypted_password.present?
+        refute @resource.encrypted_password.present?
       end
 
       test 'request should handle consecutive requests' do
