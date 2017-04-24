@@ -248,7 +248,6 @@ module DeviseTokenAuth
           @resource.send(rc.multiple_providers_association)
             .build(provider: @provider, uid: @uid)
           @oauth_registration = true
-          set_random_password
         else
           association = @resource.send(rc.multiple_providers_association)
             .where(provider: @provider, uid: @uid).first_or_create

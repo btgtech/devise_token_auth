@@ -50,6 +50,11 @@ module DeviseTokenAuth
       @errors = nil
       @error_status = 400
 
+      # Cannot generate a reset password token if the user doesn't have a password set
+      if @resource && @resource.encrypted_password.blank?
+        return render_create_error
+      end
+
       if @resource
         yield @resource if block_given?
         reset_password_attrs = {
