@@ -128,6 +128,27 @@ class OmniauthTest < ActionDispatch::IntegrationTest
       end
     end
 
+    describe 'with alternate user model and custom scope' do
+      before do
+        DeviseTokenAuth.scoped_omniauth_providers = ['facebook']
+        DeviseTokenAuth.resource_class_scope = 'custom_scope'
+      end
+
+      after do
+        DeviseTokenAuth.scoped_omniauth_providers = nil
+        DeviseTokenAuth.resource_class_scope = nil
+      end
+
+      test 'request should return success using the scoped resource class' do
+        get_via_redirect '/mangs/facebook', {
+            auth_origin_url: @redirect_url,
+            omniauth_window_type: 'newWindow'
+        }
+        assert_equal 200, response.status
+        @resource = assigns(:resource)
+      end
+    end
+
     describe 'pass additional params' do
       before do
         @fav_color = 'alizarin crimson'

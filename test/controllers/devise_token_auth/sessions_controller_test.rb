@@ -362,6 +362,41 @@ class DeviseTokenAuth::SessionsControllerTest < ActionController::TestCase
       end
     end
 
+    describe 'Alternate user class with custom scope' do
+      setup do
+        @request.env['devise.mapping'] = Devise.mappings[:mang]
+        DeviseTokenAuth.resource_class_scope = :custom_scope
+      end
+
+      teardown do
+        @request.env['devise.mapping'] = Devise.mappings[:user]
+        DeviseTokenAuth.resource_class_scope = nil
+      end
+
+      before do
+        @existing_user = mangs(:confirmed_email_user)
+        @existing_user.skip_confirmation!
+        @existing_user.save!
+
+        xhr :post, :create, {
+            email: @existing_user.email,
+            password: 'secret123'
+        }
+
+        @resource = assigns(:resource)
+        @data = JSON.parse(response.body)
+      end
+
+      test "request should succeed" do
+        assert_equal 200, response.status
+      end
+
+      test "request should return user data" do
+        assert_equal @existing_user.email, @data['data']['email']
+      end
+    end
+
+
     describe 'User with only :database_authenticatable and :registerable included' do
       setup do
         @request.env['devise.mapping'] = Devise.mappings[:only_email_user]

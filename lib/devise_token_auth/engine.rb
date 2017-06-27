@@ -21,7 +21,9 @@ module DeviseTokenAuth
                  :enable_standard_devise_support,
                  :remove_tokens_after_password_reset,
                  :default_callbacks,
-                 :headers_names
+                 :headers_names,
+                 :resource_class_scope,
+                 :scoped_omniauth_providers
 
   self.change_headers_on_each_request       = true
   self.max_number_of_devices                = 10
