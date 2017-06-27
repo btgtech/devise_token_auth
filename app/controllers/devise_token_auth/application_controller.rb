@@ -33,6 +33,16 @@ module DeviseTokenAuth
       mapping.to
     end
 
+    def scoped_resource_class(m=nil)
+      scope = DeviseTokenAuth.resource_class_scope || :all
+      resource_class(m).send(scope)
+    end
+
+    def scoped_omniauth_provider? provider
+      scoped_omniauth_providers = DeviseTokenAuth.scoped_omniauth_providers || []
+      scoped_omniauth_providers.include? provider
+    end
+
     def is_json_api
       return false unless defined?(ActiveModel::Serializer)
       return ActiveModel::Serializer.setup do |config|

@@ -30,7 +30,7 @@ module DeviseTokenAuth
           end
         end
 
-        @resource = resource_class.where(q, q_value).first
+        @resource = scoped_resource_class.where(q, q_value).first
       end
 
       if @resource && valid_params?(field, q_value) && (!@resource.respond_to?(:active_for_authentication?) || @resource.active_for_authentication?)

@@ -45,7 +45,7 @@ module DeviseTokenAuth
         end
       end
 
-      @resource = resource_class.where(q, @email).first
+      @resource = scoped_resource_class.where(q, @email).first
 
       @errors = nil
       @error_status = 400

@@ -476,6 +476,39 @@ class DeviseTokenAuth::PasswordsControllerTest < ActionController::TestCase
       end
     end
 
+    describe 'Alternate user class with custom scope' do
+      setup do
+        @request.env['devise.mapping'] = Devise.mappings[:mang]
+        DeviseTokenAuth.resource_class_scope = :custom_scope
+      end
+
+      teardown do
+        @request.env['devise.mapping'] = Devise.mappings[:user]
+        DeviseTokenAuth.resource_class_scope = nil
+      end
+
+      before do
+        @resource = mangs(:confirmed_email_user)
+        @redirect_url = 'http://ng-token-auth.dev'
+
+        xhr :post, :create, {
+            email:        @resource.email,
+            redirect_url: @redirect_url
+        }
+
+        @mail = ActionMailer::Base.deliveries.last
+        @resource.reload
+
+        @mail_config_name  = CGI.unescape(@mail.body.match(/config=([^&]*)&/)[1])
+        @mail_redirect_url = CGI.unescape(@mail.body.match(/redirect_url=([^&]*)&/)[1])
+        @mail_reset_token  = @mail.body.match(/reset_password_token=(.*)\"/)[1]
+      end
+
+      test 'response should return success status' do
+        assert_equal 200, response.status
+      end
+    end
+
     describe 'unconfirmed user' do
       before do
         @resource = users(:unconfirmed_email_user)
