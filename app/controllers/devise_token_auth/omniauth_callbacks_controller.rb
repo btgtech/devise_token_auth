@@ -235,7 +235,11 @@ module DeviseTokenAuth
       @uid = auth_hash['uid']
       @provider = auth_hash['provider']
       @email ||= auth_hash['info']['email']
-      rc = resource_class
+      if scoped_omniauth_provider? @provider
+        rc = scoped_resource_class
+      else
+        rc = resource_class
+      end
 
       if rc.multiple_providers
         @resource = rc
