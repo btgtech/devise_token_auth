@@ -7,6 +7,14 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     after_action :update_auth_header
   end
 
+  def scoped_resource_class(m=nil)
+    if DeviseTokenAuth.resource_class_scope
+      resource_class(m).send(DeviseTokenAuth.resource_class_scope)
+    else
+      resource_class(m)
+    end
+  end
+
   protected
 
   # keep track of request duration
