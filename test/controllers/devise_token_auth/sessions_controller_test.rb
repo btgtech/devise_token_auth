@@ -161,6 +161,56 @@ class DeviseTokenAuth::SessionsControllerTest < ActionController::TestCase
         end
       end
 
+      describe 'scoped authed user sign out' do
+        setup do
+          @request.env['devise.mapping'] = Devise.mappings[:mang]
+          DeviseTokenAuth.resource_class_scope = :test_scope
+        end
+
+        teardown do
+          @request.env['devise.mapping'] = Devise.mappings[:user]
+          DeviseTokenAuth.resource_class_scope = nil
+        end
+
+        before do
+          @user = mangs(:scoped_user)
+          @auth_headers = @user.create_new_auth_token
+          request.headers.merge!(@auth_headers)
+          xhr :delete, :destroy, format: :json
+          @data = JSON.parse(response.body)
+        end
+
+        test 'response should be success' do
+          assert_equal response.status, 200
+          refute @data['errors']
+        end
+      end
+
+      describe 'unscoped authed user sign out' do
+        setup do
+          @request.env['devise.mapping'] = Devise.mappings[:mang]
+          DeviseTokenAuth.resource_class_scope = :test_scope
+        end
+
+        teardown do
+          @request.env['devise.mapping'] = Devise.mappings[:user]
+          DeviseTokenAuth.resource_class_scope = nil
+        end
+
+        before do
+          @user = mangs(:unscoped_user)
+          @auth_headers = @user.create_new_auth_token
+          request.headers.merge!(@auth_headers)
+          xhr :delete, :destroy, format: :json
+          @data = JSON.parse(response.body)
+        end
+
+        test 'response should be fails' do
+          assert_equal response.status, 404
+          assert @data['errors']
+        end
+      end
+
       describe 'failure' do
         before do
           xhr :post, :create, {
