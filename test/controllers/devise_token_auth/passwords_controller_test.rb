@@ -422,7 +422,7 @@ class DeviseTokenAuth::PasswordsControllerTest < ActionController::TestCase
 
         describe 'scoped user' do
           setup do
-            @request.env['devise.mapping'] = Devise.mappings[:mang]
+            @request.env['devise.mapping'] = Devise.mappings[:multiple_provider_user]
             DeviseTokenAuth.resource_class_scope = :test_scope
           end
 
@@ -432,7 +432,7 @@ class DeviseTokenAuth::PasswordsControllerTest < ActionController::TestCase
           end
 
           before do
-            @user = mangs(:scoped_user)
+            @user = multiple_provider_users(:scoped_user)
             @auth_headers = @user.create_new_auth_token
             request.headers.merge!(@auth_headers)
             @new_password = Faker::Internet.password
@@ -454,7 +454,7 @@ class DeviseTokenAuth::PasswordsControllerTest < ActionController::TestCase
 
         describe 'unscoped user' do
           setup do
-            @request.env['devise.mapping'] = Devise.mappings[:mang]
+            @request.env['devise.mapping'] = Devise.mappings[:multiple_provider_user]
             DeviseTokenAuth.resource_class_scope = :test_scope
           end
 
@@ -464,7 +464,7 @@ class DeviseTokenAuth::PasswordsControllerTest < ActionController::TestCase
           end
 
           before do
-            @user = mangs(:unscoped_user)
+            @user = multiple_provider_users(:unscoped_user)
             @auth_headers = @user.create_new_auth_token
             request.headers.merge!(@auth_headers)
             @new_password = Faker::Internet.password

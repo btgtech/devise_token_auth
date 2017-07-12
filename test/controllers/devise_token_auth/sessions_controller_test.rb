@@ -163,7 +163,7 @@ class DeviseTokenAuth::SessionsControllerTest < ActionController::TestCase
 
       describe 'scoped authed user sign out' do
         setup do
-          @request.env['devise.mapping'] = Devise.mappings[:mang]
+          @request.env['devise.mapping'] = Devise.mappings[:multiple_provider_user]
           DeviseTokenAuth.resource_class_scope = :test_scope
         end
 
@@ -173,7 +173,7 @@ class DeviseTokenAuth::SessionsControllerTest < ActionController::TestCase
         end
 
         before do
-          @user = mangs(:scoped_user)
+          @user = multiple_provider_users(:scoped_user)
           @auth_headers = @user.create_new_auth_token
           request.headers.merge!(@auth_headers)
           xhr :delete, :destroy, format: :json
@@ -188,7 +188,7 @@ class DeviseTokenAuth::SessionsControllerTest < ActionController::TestCase
 
       describe 'unscoped authed user sign out' do
         setup do
-          @request.env['devise.mapping'] = Devise.mappings[:mang]
+          @request.env['devise.mapping'] = Devise.mappings[:multiple_provider_user]
           DeviseTokenAuth.resource_class_scope = :test_scope
         end
 
@@ -198,7 +198,7 @@ class DeviseTokenAuth::SessionsControllerTest < ActionController::TestCase
         end
 
         before do
-          @user = mangs(:unscoped_user)
+          @user = multiple_provider_users(:unscoped_user)
           @auth_headers = @user.create_new_auth_token
           request.headers.merge!(@auth_headers)
           xhr :delete, :destroy, format: :json
