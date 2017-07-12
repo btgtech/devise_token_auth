@@ -96,7 +96,8 @@ class OmniauthTest < ActionDispatch::IntegrationTest
         get_success({},'/multi_auth/facebook')
 
         authentication = @resource.authentications.first
-        assert_equal MultipleProviderUser.count, 1
+        # Because the at the beginning all the fixture users are created. In this case 2 users.
+        assert_equal MultipleProviderUser.count, 3
         assert_equal Authentication.count, 1
         assert_equal authentication.uid, '123545'
         assert_equal authentication.provider, 'facebook'

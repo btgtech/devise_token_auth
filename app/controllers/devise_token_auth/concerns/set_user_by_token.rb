@@ -26,7 +26,7 @@ module DeviseTokenAuth::Concerns::SetUserByToken
   # user auth
   def set_user_by_token(mapping=nil)
     # determine target authentication class
-    rc = resource_class(mapping)
+    rc = scoped_resource_class(mapping)
 
     # no default user defined
     return unless rc
@@ -57,7 +57,7 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     end
 
     # user has already been found and authenticated
-    return @resource if @resource && @resource.class == rc
+    return @resource if @resource and @resource.class == resource_class(mapping)
 
     # ensure we clear the client_id
     if !@token
