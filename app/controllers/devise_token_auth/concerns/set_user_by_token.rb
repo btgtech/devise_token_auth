@@ -7,6 +7,14 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     after_action :update_auth_header
   end
 
+  def scoped_resource_class(m=nil)
+    if DeviseTokenAuth.resource_class_scope
+      resource_class(m).send(DeviseTokenAuth.resource_class_scope)
+    else
+      resource_class(m)
+    end
+  end
+
   protected
 
   # keep track of request duration
@@ -17,21 +25,26 @@ module DeviseTokenAuth::Concerns::SetUserByToken
 
   # user auth
   def set_user_by_token(mapping=nil)
+    provider_name = DeviseTokenAuth.headers_names[:'provider']
+    @provider  ||= request.headers[provider_name] || params[provider_name]
+
     # determine target authentication class
-    rc = resource_class(mapping)
+    if @provider == 'email'
+      rc = scoped_resource_class(mapping)
+    else
+      rc = resource_class(mapping)
+    end
 
     # no default user defined
     return unless rc
 
     #gets the headers names, which was set in the initialize file
-    provider_name = DeviseTokenAuth.headers_names[:'provider']
     uid_name = DeviseTokenAuth.headers_names[:'uid']
     access_token_name = DeviseTokenAuth.headers_names[:'access-token']
     client_name = DeviseTokenAuth.headers_names[:'client']
 
     # parse header for values necessary for authentication
     uid        = request.headers[uid_name] || params[uid_name]
-    @provider  ||= request.headers[provider_name] || params[provider_name]
     @token     ||= request.headers[access_token_name] || params[access_token_name]
     @client_id ||= request.headers[client_name] || params[client_name]
 
@@ -49,7 +62,7 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     end
 
     # user has already been found and authenticated
-    return @resource if @resource and @resource.class == rc
+    return @resource if @resource and @resource.class == resource_class(mapping)
 
     # ensure we clear the client_id
     if !@token

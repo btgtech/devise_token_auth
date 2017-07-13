@@ -419,6 +419,70 @@ class DeviseTokenAuth::PasswordsControllerTest < ActionController::TestCase
             assert_equal 401, response.status
           end
         end
+
+        describe 'scoped user' do
+          setup do
+            @request.env['devise.mapping'] = Devise.mappings[:multiple_provider_user]
+            DeviseTokenAuth.resource_class_scope = :test_scope
+          end
+
+          teardown do
+            @request.env['devise.mapping'] = Devise.mappings[:user]
+            DeviseTokenAuth.resource_class_scope = nil
+          end
+
+          before do
+            @user = multiple_provider_users(:scoped_user)
+            @auth_headers = @user.create_new_auth_token
+            request.headers.merge!(@auth_headers)
+            @new_password = Faker::Internet.password
+
+            xhr :put, :update, {
+              password: @new_password,
+              password_confirmation: @new_password
+            }
+
+            @data = JSON.parse(response.body)
+            @user.reload
+          end
+
+          test 'response should be success' do
+            assert_equal 200, response.status
+            refute @data['errors']
+          end
+        end
+
+        describe 'unscoped user' do
+          setup do
+            @request.env['devise.mapping'] = Devise.mappings[:multiple_provider_user]
+            DeviseTokenAuth.resource_class_scope = :test_scope
+          end
+
+          teardown do
+            @request.env['devise.mapping'] = Devise.mappings[:user]
+            DeviseTokenAuth.resource_class_scope = nil
+          end
+
+          before do
+            @user = multiple_provider_users(:unscoped_user)
+            @auth_headers = @user.create_new_auth_token
+            request.headers.merge!(@auth_headers)
+            @new_password = Faker::Internet.password
+
+            xhr :put, :update, {
+              password: @new_password,
+              password_confirmation: @new_password
+            }
+
+            @data = JSON.parse(response.body)
+            @user.reload
+          end
+
+          test 'response should be fails' do
+            assert_equal 401, response.status
+            assert @data['errors']
+          end
+        end
       end
     end
 
