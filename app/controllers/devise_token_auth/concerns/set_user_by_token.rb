@@ -164,9 +164,7 @@ module DeviseTokenAuth::Concerns::SetUserByToken
     mapping.to
   end
 
-
   private
-
 
   def is_batch_request?(user, client_id)
     !params[:unbatch] &&
